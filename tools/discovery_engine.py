@@ -1,18 +1,9 @@
-# Save this in your agent's directory, e.g., `my_agent/tools.py`
-# Then import it into your agent.py
 
 import os
 from typing import List, Dict, Any
 from google.cloud import discoveryengine_v1beta
 from google.api_core.client_options import ClientOptions
 from google.protobuf.json_format import MessageToDict
-
-
-# --- Configuration (Load from environment variables for security and flexibility) ---
-# Ensure these are set in your .env file:
-# GOOGLE_CLOUD_PROJECT=your-gcp-project-id
-# GOOGLE_CLOUD_LOCATION=us-central1 # Or 'global' if your data store is global
-# YOUR_DATASTORE_ID=your-vertex-ai-search-data-store-id
 
 PROJECT_ID = os.getenv("GOOGLE_CLOUD_PROJECT")
 LOCATION = os.getenv("GOOGLE_CLOUD_LOCATION") 
@@ -26,8 +17,8 @@ if not PROJECT_ID or not DATASTORE_ID:
         "environment variables in your .env file."
     )
 
-# Construct the serving config name for your data store
-# For structured data, it's typically 'default_config'
+# Construct the serving config name for data store
+
 SERVING_CONFIG_NAME = (
     f"projects/{PROJECT_ID}/locations/{LOCATION}/dataStores/{DATASTORE_ID}/servingConfigs/default_config"
 )
@@ -65,7 +56,6 @@ def retrieve_product_details_from_search(query: str, max_results: int = 10) -> s
             serving_config=SERVING_CONFIG_NAME,
             query=query,
             page_size=max_results,
-            # You can add more parameters here if needed, e.g., `query_expansion_spec`, `spell_correction_spec`
         )
 
         response = search_client.search(request=request)
@@ -74,18 +64,15 @@ def retrieve_product_details_from_search(query: str, max_results: int = 10) -> s
         for result in response.results:
             document = result.document
             # For structured data, the fields are usually in document.struct_data
-            # You might need to adjust this based on your exact schema and data type (structured vs unstructured)
             structured_data = MessageToDict(document._pb.struct_data) # Convert protobuf struct to dict
 
             title = structured_data.get('title_y', 'N/A')
-            image_url = structured_data.get('main_image_url', 'N/A') # Assuming 'image_url' is the field name in your JSONL
-            # You can also get the main content if needed, e.g., for context
-            # content = structured_data.get('content', 'N/A')
+            image_url = structured_data.get('main_image_url', 'N/A') 
+           
 
             product_details.append(
                 f"Title: {title}\n"
                 f"Image URL: {image_url}\n"
-                # f"Content Snippet: {content[:150]}..." # Include a snippet if relevant
             )
 
         if product_details:
@@ -94,7 +81,6 @@ def retrieve_product_details_from_search(query: str, max_results: int = 10) -> s
             return "No relevant product details found in the data store for your query."
 
     except Exception as e:
-        # Log the full error for debugging
         print(f"Error calling Vertex AI Search: {e}")
         return f"An error occurred while searching for product details: {str(e)}"
 
